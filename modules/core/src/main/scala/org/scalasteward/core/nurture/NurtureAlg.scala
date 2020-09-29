@@ -165,12 +165,15 @@ final class NurtureAlg[F[_]](implicit
           .traverse(vcsExtraAlg.getReleaseRelatedUrls(_, data.update))
       branchName = vcs.createBranch(config.vcsType, data.fork, data.update)
       migrations = migrationAlg.findMigrations(data.update)
+      filesContainingCurrentVersion <-
+        gitAlg.findFilesContaining(data.repo, data.update.currentVersion)
       requestData = NewPullRequestData.from(
         data,
         branchName,
         existingArtifactUrlsMap,
         releaseRelatedUrls.getOrElse(List.empty),
-        migrations
+        migrations,
+        filesContainingCurrentVersion
       )
       pr <- vcsApiAlg.createPullRequest(data.repo, requestData)
       _ <- pullRequestRepository.createOrUpdate(

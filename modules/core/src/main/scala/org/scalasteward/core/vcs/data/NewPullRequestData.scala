@@ -43,7 +43,8 @@ object NewPullRequestData {
       update: Update,
       artifactIdToUrl: Map[String, Uri],
       releaseRelatedUrls: List[ReleaseRelatedUrl],
-      migrations: List[Migration]
+      migrations: List[Migration],
+      filesContainingCurrentVersion: List[String]
   ): String = {
     val artifacts = artifactsWithOptionalUrl(update, artifactIdToUrl)
     val (migrationLabel, appliedMigrations) = migrationNote(migrations)
@@ -53,7 +54,7 @@ object NewPullRequestData {
 
     s"""|Updates $artifacts ${fromTo(update)}.
         |${releaseNote(releaseRelatedUrls).getOrElse("")}
-        |
+        |${oldVersionFilesWarning(filesContainingCurrentVersion)}
         |I'll automatically update this PR to resolve conflicts as long as you don't change it yourself.
         |
         |If you'd like to skip this version, you can just close this PR. If you have any feedback, just mention me in the comments below.
@@ -154,6 +155,18 @@ object NewPullRequestData {
       )
     }
 
+  def oldVersionFilesWarning(files: List[String]): String =
+    if (files.isEmpty) ""
+    else
+      s"""|
+          |The following files still refer to the old version number.
+          |You might want to review and update them manually.
+          |
+          |```
+          |${files.mkString("\n")}
+          |```
+          |""".stripMargin
+
   def semVerLabel(update: Update): Option[String] =
     for {
       curr <- SemVer.parse(update.currentVersion)
@@ -166,7 +179,8 @@ object NewPullRequestData {
       branchName: String,
       artifactIdToUrl: Map[String, Uri] = Map.empty,
       releaseRelatedUrls: List[ReleaseRelatedUrl] = List.empty,
-      migrations: List[Migration] = List.empty
+      migrations: List[Migration] = List.empty,
+      filesContainingCurrentVersion: List[String] = List.empty
   ): NewPullRequestData =
     NewPullRequestData(
       title = git.commitMsgFor(data.update, data.repoConfig.commits),
@@ -174,7 +188,8 @@ object NewPullRequestData {
         data.update,
         artifactIdToUrl,
         releaseRelatedUrls,
-        migrations
+        migrations,
+        filesContainingCurrentVersion
       ),
       head = branchName,
       base = data.baseBranch

@@ -16,6 +16,7 @@
 
 package org.scalasteward.core.github.http4s
 
+import cats.Applicative
 import org.http4s.{Request, Uri}
 import org.scalasteward.core.git.Branch
 import org.scalasteward.core.github._
@@ -27,7 +28,8 @@ final class Http4sGitHubApiAlg[F[_]](
     gitHubApiHost: Uri,
     modify: Repo => Request[F] => F[Request[F]]
 )(implicit
-    client: HttpJsonClient[F]
+    client: HttpJsonClient[F],
+    F: Applicative[F]
 ) extends VCSApiAlg[F] {
   private val url = new Url(gitHubApiHost)
 
@@ -44,5 +46,6 @@ final class Http4sGitHubApiAlg[F[_]](
     client.get(url.repos(repo), modify(repo))
 
   override def listPullRequests(repo: Repo, head: String, base: Branch): F[List[PullRequestOut]] =
-    client.get(url.listPullRequests(repo, head, base), modify(repo))
+    F.pure(List.empty)
+//    client.get(url.listPullRequests(repo, head, base), modify(repo))
 }

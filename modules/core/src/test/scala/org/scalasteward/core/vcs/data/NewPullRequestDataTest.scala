@@ -155,4 +155,27 @@ class NewPullRequestDataTest extends AnyFunSuite with Matchers {
       Update.Single(dependency.copy(configurations = Some("scalafix-rule")), Nel.of("0.2"))
     ) shouldBe "scalafix-rule-update"
   }
+
+  test("oldVersionFilesWarning: when there are no files") {
+    val files = List.empty
+    NewPullRequestData.oldVersionFilesWarning(files) shouldBe ""
+  }
+
+  test("oldVersionFilesWarning: when there are files") {
+    val files = List(
+      "/home/users/someone/something/README.md",
+      "/home/users/someone/something/else/application.conf"
+    )
+
+    NewPullRequestData.oldVersionFilesWarning(files) shouldBe
+      """|
+         |The following files still refer to the old version number.
+         |You might want to review and update them manually.
+         |
+         |```
+         |/home/users/someone/something/README.md
+         |/home/users/someone/something/else/application.conf
+         |```
+         |""".stripMargin
+  }
 }
